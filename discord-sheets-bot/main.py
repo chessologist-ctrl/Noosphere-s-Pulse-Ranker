@@ -28,7 +28,7 @@ creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
 gs_client = gspread.authorize(creds)
 sheet = gs_client.open("Discord Chat Log").sheet1
 
-# ========================== TEXT MESSAGES ==========================
+# ========== Text Message Logging ==========
 @client.event
 async def on_message(message):
     if message.author.bot:
@@ -42,7 +42,7 @@ async def on_message(message):
     print(f"[TEXT] {username} in {channel_name}: {content}")
     sheet.append_row([timestamp, username, content, channel_name])
 
-# ========================== VOICE EVENTS ==========================
+# ========== Voice Channel Logging ==========
 @client.event
 async def on_voice_state_update(member, before, after):
     if member.bot:
@@ -50,8 +50,6 @@ async def on_voice_state_update(member, before, after):
 
     timestamp = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
     username = str(member)
-    channel_name = ""
-    action = ""
 
     if before.channel is None and after.channel is not None:
         action = "joined voice channel"
