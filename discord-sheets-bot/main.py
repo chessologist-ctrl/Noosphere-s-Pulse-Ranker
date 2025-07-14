@@ -6,14 +6,14 @@ import os, json
 from datetime import datetime
 from keep_alive import keep_alive
 
-# Start ping server
+# Keep-alive ping server
 keep_alive()
 
 # Load environment variables
 load_dotenv()
 DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
 
-# Setup Discord intents
+# Setup Discord
 intents = discord.Intents.default()
 intents.message_content = True
 intents.voice_states = True
@@ -28,9 +28,6 @@ creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
 gs_client = gspread.authorize(creds)
 sheet = gs_client.open("Discord Chat Log").sheet1
 
-# Prevent duplicate entries: store last activity per user temporarily
-last_vc_event = {}
-
 @client.event
 async def on_ready():
     print(f"✅ Logged in as {client.user}")
@@ -39,40 +36,40 @@ async def on_ready():
 async def on_message(message):
     if message.author.bot:
         return
+
     timestamp = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
-    user = message.author.display_name
+    username = str(message.author)
     content = message.content
-    channel = f"💬 {message.channel.name}"
-    print(f"[{channel}] {user}: {content}")
-    sheet.append_row([timestamp, user, content, channel])
+    channel_name = f"💬 {message.channel.name}"
+    server_name = str(message.guild.name)
+
+    print(f"[{server_name}] {channel_name} {username}: {content}")
+    sheet.append_row([timestamp, username, content, channel_name, server_name])
 
 @client.event
 async def on_voice_state_update(member, before, after):
-    timestamp = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
-    username = member.display_name
-    user_id = member.id
+    # Avoid logging self-triggered state loops
+    if member.bot:
+        return
 
-    # Detect activity
+    timestamp = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
+    username = str(member)
+    server_name = str(member.guild.name)
+
     if before.channel is None and after.channel is not None:
-        action = "joined"
-        channel_name = after.channel.name
+        action = f"joined voice channel"
+        channel_name = f"🎙 {after.channel.name}"
     elif before.channel is not None and after.channel is None:
-        action = "left"
-        channel_name = before.channel.name
+        action = f"left voice channel"
+        channel_name = f"🎙 {before.channel.name}"
     elif before.channel != after.channel:
-        action = f"switched from {before.channel.name} to {after.channel.name}"
-        channel_name = f"{before.channel.name} → {after.channel.name}"
+        action = f"switched voice channel"
+        channel_name = f"🎙 {before.channel.name} → {after.channel.name}"
     else:
         return
 
-    # Avoid duplicate logging
-    event_signature = f"{action}-{channel_name}"
-    if last_vc_event.get(user_id) == event_signature:
-        return  # Already logged this exact event
-    last_vc_event[user_id] = event_signature
-
-    print(f"[VC] {username} {action} {channel_name}")
-    sheet.append_row([timestamp, username, action, f"🎙 {channel_name}", "VC Activity"])
+    print(f"[{server_name}] {username} {action} in {channel_name}")
+    sheet.append_row([timestamp, username, action, channel_name, server_name])
 
 # Run the bot
 client.run(DISCORD_TOKEN)
