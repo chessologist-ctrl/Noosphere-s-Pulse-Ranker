@@ -2,28 +2,26 @@ import discord
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 from dotenv import load_dotenv
-import os
+import os, json
 from datetime import datetime
 from keep_alive import keep_alive
+
+# Keep-alive ping server
 keep_alive()
-# Load secret token
+
+# Load environment variables
 load_dotenv()
 DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
+
 # Setup Discord
 intents = discord.Intents.default()
 intents.message_content = True
 intents.voice_states = True
-intents.members = True  # This is needed to detect users in voice channels
+intents.members = True
 client = discord.Client(intents=intents)
 
-# Setup Google Sheets
+# Setup Google Sheets using CREDS_JSON
 scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
-import os, json
-from oauth2client.service_account import ServiceAccountCredentials
-from dotenv import load_dotenv
-
-load_dotenv()
-
 creds_json = os.getenv("CREDS_JSON")
 creds_dict = json.loads(creds_json)
 creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
@@ -43,31 +41,29 @@ async def on_message(message):
     content = message.content
     channel = str(message.channel.name)
     print(f"[{channel}] {user}: {content}")
-    sheet.append_row([timestamp, user, content, channel])
+    sheet.append_row([timestamp, user, content, f"💬 {channel}"])
+
 @client.event
 async def on_voice_state_update(member, before, after):
-    from datetime import datetime
-
     timestamp = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
     user = str(member)
-    server = str(member.guild.name)
+    action = ""
+    channel_name = ""
 
     if before.channel is None and after.channel is not None:
-        # User joined a voice channel
-        action = f"joined voice channel: {after.channel.name}"
+        action = f"joined voice channel: 🎙 {after.channel.name}"
+        channel_name = after.channel.name
     elif before.channel is not None and after.channel is None:
-        # User left a voice channel
-        action = f"left voice channel: {before.channel.name}"
+        action = f"left voice channel: 🎙 {before.channel.name}"
+        channel_name = before.channel.name
     elif before.channel != after.channel:
-        # User switched between voice channels
-        action = f"switched from {before.channel.name} to {after.channel.name}"
+        action = f"switched from 🎙 {before.channel.name} to 🎙 {after.channel.name}"
+        channel_name = f"{before.channel.name} → {after.channel.name}"
     else:
-        return  # No meaningful change
+        return
 
-    print(f"[{server} > VC] {user} {action}")
-    sheet.append_row([timestamp, server, user, action, "VC Activity"])
-# Keep Replit alive
-keep_alive()
+    print(f"[VC] {user} {action}")
+    sheet.append_row([timestamp, user, action, f"🎙 {channel_name} (VC Activity)"])
 
 # Run the bot
 client.run(DISCORD_TOKEN)
