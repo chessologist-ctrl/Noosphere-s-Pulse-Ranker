@@ -2,7 +2,7 @@ import discord
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 from dotenv import load_dotenv
-import os, json
+import os
 from datetime import datetime, timezone
 from keep_alive import keep_alive
 
@@ -20,11 +20,9 @@ intents.voice_states = True
 intents.members = True
 client = discord.Client(intents=intents)
 
-# Setup Google Sheets access
+# Setup Google Sheets using local creds.json file
 scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
-creds_json = os.getenv("CREDS_JSON")
-creds_dict = json.loads(creds_json)
-creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
+creds = ServiceAccountCredentials.from_json_keyfile_name("creds.json", scope)
 gs_client = gspread.authorize(creds)
 sheet = gs_client.open("Discord Chat Log").sheet1
 
