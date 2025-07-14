@@ -6,7 +6,7 @@ import os, json
 from datetime import datetime
 from keep_alive import keep_alive
 
-# Keep-alive ping server
+# Keep-alive server
 keep_alive()
 
 # Load environment variables
@@ -37,33 +37,34 @@ async def on_message(message):
     if message.author.bot:
         return
     timestamp = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
-    user = str(message.author)
+    username = str(message.author.display_name)
     content = message.content
-    channel = str(message.channel.name)
-    print(f"[{channel}] {user}: {content}")
-    sheet.append_row([timestamp, user, content, f"💬 {channel}"])
+    channel_name = f"💬 {message.channel.name}"
+    print(f"[{channel_name}] {username}: {content}")
+    sheet.append_row([timestamp, username, content, channel_name])
 
 @client.event
 async def on_voice_state_update(member, before, after):
     timestamp = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
-    user = str(member)
-    action = ""
-    channel_name = ""
+    username = str(member.display_name)
 
     if before.channel is None and after.channel is not None:
-        action = f"joined voice channel: 🎙 {after.channel.name}"
-        channel_name = after.channel.name
+        # Joined VC
+        action = "joined voice channel"
+        vc_name = after.channel.name
     elif before.channel is not None and after.channel is None:
-        action = f"left voice channel: 🎙 {before.channel.name}"
-        channel_name = before.channel.name
+        # Left VC
+        action = "left voice channel"
+        vc_name = before.channel.name
     elif before.channel != after.channel:
-        action = f"switched from 🎙 {before.channel.name} to 🎙 {after.channel.name}"
-        channel_name = f"{before.channel.name} → {after.channel.name}"
+        # Switched VC
+        action = f"switched VC: {before.channel.name} → {after.channel.name}"
+        vc_name = f"{before.channel.name} → {after.channel.name}"
     else:
         return
 
-    print(f"[VC] {user} {action}")
-    sheet.append_row([timestamp, user, action, f"🎙 {channel_name} (VC Activity)"])
+    print(f"[VC] {username} {action}")
+    sheet.append_row([timestamp, username, action, f"🎙 {vc_name}"])
 
 # Run the bot
 client.run(DISCORD_TOKEN)
