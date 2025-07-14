@@ -43,7 +43,9 @@ async def on_message(message):
     channel_name = f"💬 {message.channel.name}"
 
     print(f"[TEXT] {channel_name} | {username}: {content}")
-    sheet.append_row([timestamp, username, content, channel_name])
+   print("DEBUG VOICE LOG:", [timestamp, username, message, channel])  # just print for now
+# sheet.append_row([timestamp, username, message, channel])  # <- disable actual logging
+
 
 @client.event
 async def on_voice_state_update(member, before, after):
