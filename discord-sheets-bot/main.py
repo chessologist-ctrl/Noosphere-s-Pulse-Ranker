@@ -35,40 +35,40 @@ async def on_ready():
 @client.event
 async def on_message(message):
     if message.author.bot:
-        return  # Ignore bot messages
+        return
 
     timestamp = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
-    username = str(message.author)
+    username = message.author.name  # ✅ Clean username only
     content = message.content
     channel_name = f"💬 {message.channel.name}"
 
-    print(f"[{channel_name}] {username}: {content}")
+    print(f"[TEXT] {channel_name} | {username}: {content}")
     sheet.append_row([timestamp, username, content, channel_name])
 
 @client.event
 async def on_voice_state_update(member, before, after):
     if member.bot:
-        return  # Ignore bots
+        return
 
     timestamp = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
-    username = str(member)
-    content = ""
+    username = member.name  # ✅ Clean username only
+    action = ""
     channel_name = ""
 
     if before.channel is None and after.channel is not None:
-        content = "joined voice channel"
+        action = "joined voice channel"
         channel_name = f"🎙 {after.channel.name}"
     elif before.channel is not None and after.channel is None:
-        content = "left voice channel"
+        action = "left voice channel"
         channel_name = f"🎙 {before.channel.name}"
     elif before.channel != after.channel:
-        content = "switched voice channel"
+        action = "switched voice channel"
         channel_name = f"🎙 {before.channel.name} → {after.channel.name}"
     else:
         return
 
-    print(f"[VC] {username}: {content} in {channel_name}")
-    sheet.append_row([timestamp, username, content, channel_name])
+    print(f"[VC] {username} {action} in {channel_name}")
+    sheet.append_row([timestamp, username, action, channel_name])
 
 # Run the bot
 client.run(DISCORD_TOKEN)
