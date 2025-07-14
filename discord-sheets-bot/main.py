@@ -3,7 +3,7 @@ import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 from dotenv import load_dotenv
 import os, json
-from datetime import datetime
+from datetime import datetime, timezone
 from keep_alive import keep_alive
 
 # Start keep_alive server
@@ -37,8 +37,8 @@ async def on_message(message):
     if message.author.bot:
         return
 
-    timestamp = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
-    username = message.author.name  # Only username
+    timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
+    username = message.author.name  # Clean username
     content = message.content
     channel_name = f"💬 {message.channel.name}"
 
@@ -50,8 +50,8 @@ async def on_voice_state_update(member, before, after):
     if member.bot:
         return
 
-    timestamp = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
-    username = member.name  # Only username
+    timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
+    username = member.name
     message = ""
     channel = ""
 
