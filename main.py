@@ -13,14 +13,14 @@ keep_alive()
 load_dotenv()
 DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
 
-# Setup Discord
+# Setup Discord client with intents
 intents = discord.Intents.default()
 intents.message_content = True
 intents.voice_states = True
 intents.members = True
 client = discord.Client(intents=intents)
 
-# Setup Google Sheets
+# Setup Google Sheets access
 scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
 creds_json = os.getenv("CREDS_JSON")
 creds_dict = json.loads(creds_json)
@@ -38,7 +38,7 @@ async def on_message(message):
         return
 
     timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
-    username = message.author.name  # Clean username
+    username = message.author.name
     content = message.content
     channel_name = f"💬 {message.channel.name}"
 
