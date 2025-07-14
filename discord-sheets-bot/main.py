@@ -13,7 +13,7 @@ keep_alive()
 load_dotenv()
 DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
 
-# Setup Discord
+# Setup Discord client with required intents
 intents = discord.Intents.default()
 intents.message_content = True
 intents.voice_states = True
@@ -28,10 +28,7 @@ creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
 gs_client = gspread.authorize(creds)
 sheet = gs_client.open("Discord Chat Log").sheet1
 
-@client.event
-async def on_ready():
-    print(f"✅ Logged in as {client.user}")
-
+# ======================== TEXT MESSAGE LOGGING ========================
 @client.event
 async def on_message(message):
     if message.author.bot:
@@ -41,35 +38,37 @@ async def on_message(message):
     username = str(message.author)
     content = message.content
     channel_name = f"💬 {message.channel.name}"
-    server_name = str(message.guild.name)
+    server_name = str(message.guild.name) if message.guild else "DM"
 
-    print(f"[{server_name}] {channel_name} {username}: {content}")
+    print(f"[TEXT] [{server_name}] [{channel_name}] {username}: {content}")
     sheet.append_row([timestamp, username, content, channel_name, server_name])
 
+# ======================== VOICE STATE LOGGING ========================
 @client.event
 async def on_voice_state_update(member, before, after):
-    # Avoid logging self-triggered state loops
     if member.bot:
         return
 
     timestamp = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
     username = str(member)
     server_name = str(member.guild.name)
+    action = ""
+    channel_desc = ""
 
     if before.channel is None and after.channel is not None:
-        action = f"joined voice channel"
-        channel_name = f"🎙 {after.channel.name}"
+        action = "joined voice channel"
+        channel_desc = f"🎙 {after.channel.name}"
     elif before.channel is not None and after.channel is None:
-        action = f"left voice channel"
-        channel_name = f"🎙 {before.channel.name}"
+        action = "left voice channel"
+        channel_desc = f"🎙 {before.channel.name}"
     elif before.channel != after.channel:
-        action = f"switched voice channel"
-        channel_name = f"🎙 {before.channel.name} → {after.channel.name}"
+        action = "switched voice channel"
+        channel_desc = f"🎙 {before.channel.name} → {after.channel.name}"
     else:
-        return
+        return  # No meaningful change
 
-    print(f"[{server_name}] {username} {action} in {channel_name}")
-    sheet.append_row([timestamp, username, action, channel_name, server_name])
+    print(f"[VOICE] [{server_name}] {username} {action}: {channel_desc}")
+    sheet.append_row([timestamp, username, action, channel_desc, server_name])
 
-# Run the bot
+# ======================== RUN BOT ========================
 client.run(DISCORD_TOKEN)
