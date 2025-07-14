@@ -3,7 +3,7 @@ import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 from dotenv import load_dotenv
 import os, json
-from datetime import datetime
+from datetime import datetime, timezone
 from keep_alive import keep_alive
 
 # Start keep_alive server
@@ -13,7 +13,7 @@ keep_alive()
 load_dotenv()
 DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
 
-# Setup Discord intents
+# Setup Discord
 intents = discord.Intents.default()
 intents.message_content = True
 intents.voice_states = True
@@ -37,38 +37,38 @@ async def on_message(message):
     if message.author.bot:
         return
 
-    timestamp = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
-    username = str(message.author)
+    timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
+    username = message.author.name  # Clean username
     content = message.content
-    channel = str(message.channel.name)
+    channel_name = f"💬 {message.channel.name}"
 
-    print(f"[TEXT] {channel} | {username}: {content}")
-    sheet.append_row([timestamp, username, content, channel])
+    print(f"[TEXT] {channel_name} | {username}: {content}")
+    sheet.append_row([timestamp, username, content, channel_name])
 
 @client.event
 async def on_voice_state_update(member, before, after):
     if member.bot:
         return
 
-    timestamp = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
-    username = str(member)
-    action = ""
+    timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
+    username = member.name
+    message = ""
     channel = ""
 
     if before.channel is None and after.channel is not None:
-        action = f"joined voice channel"
-        channel = after.channel.name
+        message = "joined voice channel"
+        channel = f"🎙 {after.channel.name}"
     elif before.channel is not None and after.channel is None:
-        action = f"left voice channel"
-        channel = before.channel.name
+        message = "left voice channel"
+        channel = f"🎙 {before.channel.name}"
     elif before.channel != after.channel:
-        action = f"switched from {before.channel.name} to {after.channel.name}"
-        channel = f"{before.channel.name} → {after.channel.name}"
+        message = "switched voice channel"
+        channel = f"🎙 {before.channel.name} → {after.channel.name}"
     else:
-        return  # No meaningful change
+        return
 
-    print(f"[VC] {username} {action} in {channel}")
-    sheet.append_row([timestamp, username, action, channel])
+    print(f"[VC] {username}: {message} in {channel}")
+    sheet.append_row([timestamp, username, message, channel])
 
 # Run the bot
 client.run(DISCORD_TOKEN)
