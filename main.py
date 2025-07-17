@@ -24,7 +24,7 @@ client = discord.Client(intents=intents)
 scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
 creds = ServiceAccountCredentials.from_json_keyfile_name("creds.json", scope)
 gs_client = gspread.authorize(creds)
-sheet = gs_client.open("Discord Chat Log").sheet1
+sheet = gs_client.open("Pulse Ranker Logs").sheet1
 
 @client.event
 async def on_ready():
